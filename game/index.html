@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="icon" href="data:,">
+<title>Sky Soar — Canyon Run</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;overflow:hidden;background:#7ec8f7;color:#fff;
+    font-family:"Segoe UI",system-ui,-apple-system,sans-serif;-webkit-user-select:none;user-select:none}
+  #game canvas{position:fixed;inset:0;display:block}
+  .hud{position:fixed;z-index:10;pointer-events:none}
+  .panel{background:rgba(10,26,40,.78);border:1px solid rgba(255,255,255,.35);
+    border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+  /* top centre: timer + score */
+  #top-center{top:12px;left:50%;transform:translateX(-50%);text-align:center;padding:8px 22px}
+  #hud-timer{font-size:34px;font-weight:800;letter-spacing:2px;line-height:1;color:#fff}
+  #hud-timer.low{color:#ff5a4d}
+  #hud-score-line{font-size:15px;letter-spacing:1px;margin-top:3px;color:#cfe8ff}
+  #hud-score{color:#ffd23f;font-weight:800;font-size:18px}
+  #hud-best{font-size:11px;letter-spacing:2px;color:#9fc6e8;margin-top:2px}
+  /* top left: instruments */
+  #instruments{top:12px;left:12px;padding:10px 14px;display:flex;gap:16px;align-items:center}
+  .gauge{text-align:center}
+  .gauge label{display:block;font-size:10px;letter-spacing:2px;color:#9fc6e8}
+  .gauge b{font-size:26px;font-weight:800;color:#fff}
+  .gauge small{font-size:12px;color:#cfe8ff}
+  #horizon{border:2px solid rgba(255,255,255,.6);border-radius:50%;background:#123}
+  /* top right: compass */
+  #compass-wrap{top:12px;right:12px;padding:8px 12px;width:230px;text-align:center}
+  #compass-strip{position:relative;height:18px;overflow:hidden;font-size:11px;color:#cfe8ff}
+  #compass-strip span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+  .compass-needle{color:#ffd23f;font-size:10px;line-height:1}
+  #compass-read{font-size:16px;font-weight:800;color:#fff;letter-spacing:1px}
+  #hud-next{font-size:12px;letter-spacing:1px;color:#ffd23f;margin-top:3px}
+  /* bottom left: throttle + fuel */
+  #power{left:12px;bottom:12px;padding:10px 14px;width:250px}
+  #power label{font-size:10px;letter-spacing:2px;color:#9fc6e8;display:flex;justify-content:space-between}
+  .bar{height:12px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.35);
+    border-radius:6px;overflow:hidden;margin:3px 0 8px}
+  .bar>i{display:block;height:100%;transition:width .12s}
+  #hud-throttle-fill{background:linear-gradient(90deg,#2fa8dd,#7ee0ff)}
+  #hud-fuel-fill{background:linear-gradient(90deg,#39c24d,#a5e34d)}
+  #hud-fuel-fill.low{background:linear-gradient(90deg,#ff5a4d,#ff9a4d)}
+  /* bottom right: damage hearts */
+  #damage-wrap{right:12px;bottom:12px;padding:10px 16px;text-align:center}
+  #damage-wrap label{font-size:10px;letter-spacing:2px;color:#9fc6e8}
+  #hud-damage{font-size:24px;color:#ff6b5e;letter-spacing:3px;line-height:1.2}
+  /* centre banner */
+  #banner{left:50%;top:26%;transform:translateX(-50%) scale(.9);text-align:center;
+    opacity:0;transition:opacity .18s,transform .18s}
+  #banner.show{opacity:1;transform:translateX(-50%) scale(1)}
+  #banner-title{font-size:46px;font-weight:800;letter-spacing:5px;color:#ffd23f;
+    text-shadow:0 3px 14px rgba(0,0,0,.8)}
+  #banner-sub{font-size:18px;letter-spacing:2px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+  #damage-flash{position:fixed;inset:0;z-index:20;pointer-events:none;
+    background:radial-gradient(ellipse at center,transparent 55%,rgba(255,40,20,.55));
+    opacity:0;transition:opacity .12s}
+  #damage-flash.show{opacity:1}
+  /* overlays */
+  .overlay{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at 50% 30%,rgba(20,60,90,.45),rgba(6,18,30,.82))}
+  .overlay.hidden,.hidden{display:none!important}
+  .menu{width:min(620px,92vw);text-align:center;padding:34px 38px}
+  .menu h1{font-size:56px;letter-spacing:8px;font-weight:800;line-height:1;color:#fff}
+  .menu h1 span{color:#ff7a1a}
+  .menu .tag{color:#ffd23f;letter-spacing:5px;font-size:13px;margin-top:6px}
+  .menu p{color:#d7e9f7;font-size:15px;line-height:1.6;margin:16px 0}
+  .menu .big-score{font-size:64px;font-weight:800;color:#ffd23f;line-height:1}
+  .menu .score-label{font-size:12px;letter-spacing:3px;color:#9fc6e8;margin-top:4px}
+  .menu .stat{font-size:16px;color:#fff;margin-top:8px;letter-spacing:1px}
+  .controls{display:grid;grid-template-columns:1fr 1fr;gap:5px 22px;text-align:left;
+    font-size:13px;color:#9fc6e8;margin:0 auto 20px;max-width:480px}
+  .controls b{color:#fff;font-weight:600}
+  .hint{font-size:12px;color:#9fc6e8;margin-top:14px;letter-spacing:1px}
+  button{pointer-events:auto;cursor:pointer;font-family:inherit;background:#ff7a1a;color:#fff;
+    border:none;border-radius:8px;font-size:19px;font-weight:800;letter-spacing:3px;padding:14px 44px;
+    box-shadow:0 4px 0 #c85a10}
+  /* touch controls (built by input.js, only on touch devices) */
+  #touch-ui{position:fixed;inset:0;z-index:30;pointer-events:none;touch-action:none}
+  #stick-base{position:fixed;left:16px;bottom:120px;width:120px;height:120px;border-radius:50%;
+    background:rgba(10,26,40,.45);border:2px solid rgba(255,255,255,.5);pointer-events:auto;touch-action:none}
+  #stick-knob{position:absolute;left:50%;top:50%;width:52px;height:52px;border-radius:50%;
+    background:rgba(255,255,255,.85);border:2px solid rgba(10,26,40,.4);
+    transform:translate(-50%,-50%);box-shadow:0 2px 8px rgba(0,0,0,.4);pointer-events:none}
+  #touch-btns{position:fixed;right:14px;bottom:120px;display:flex;gap:10px;align-items:flex-end;
+    pointer-events:none}
+  #touch-btns button{pointer-events:auto;touch-action:none;width:56px;height:56px;padding:0;
+    font-size:14px;letter-spacing:1px;border-radius:50%;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+  #touch-btns #btn-boost{width:64px;height:72px;border-radius:14px;background:#ff7a1a;
+    box-shadow:0 4px 0 #c85a10;font-size:15px}
+  #touch-btns button.held{filter:brightness(1.35);transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+  button:hover{filter:brightness(1.1)}
+  @media (max-width:640px){.menu h1{font-size:36px}.controls{grid-template-columns:1fr}}
+  /* narrow portrait phones: top HUD stacks in two rows instead of overlapping */
+  @media (max-width:700px){
+    #top-center{top:8px;padding:6px 16px}
+    #hud-timer{font-size:24px}
+    #hud-score-line{font-size:12px}
+    #hud-best{display:none}
+    #instruments{top:64px;left:8px;padding:6px 8px;gap:6px}
+    #instruments .gauge b{font-size:15px}
+    #instruments .gauge label{font-size:8px}
+    #horizon{width:48px;height:48px}
+    #compass-wrap{top:64px;right:8px;width:150px;padding:6px 8px}
+    #compass-read{font-size:12px}
+    #hud-next{font-size:11px}
+    #power{left:8px;bottom:8px;width:210px;padding:8px 10px}
+    #damage-wrap{right:8px;bottom:8px;padding:8px 12px}
+    #hud-damage{font-size:20px}
+    #banner-title{font-size:32px}
+  }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.min.js" } }
+</script>
+</head>
+<body>
+<div id="game"></div>
+
+<!-- HUD: lit instruments -->
+<div class="hud panel" id="top-center">
+  <div id="hud-timer">2:00</div>
+  <div id="hud-score-line">SCORE <span id="hud-score">0</span> &nbsp;·&nbsp; RINGS <span id="hud-rings">0/14</span></div>
+  <div id="hud-best">BEST 0</div>
+</div>
+
+<div class="hud panel" id="instruments">
+  <canvas id="horizon" width="84" height="84"></canvas>
+  <div class="gauge"><label>ALTITUDE</label><b id="hud-alt">0 m</b></div>
+  <div class="gauge"><label>AIRSPEED</label><b id="hud-speed">0 km/h</b></div>
+</div>
+
+<div class="hud panel" id="compass-wrap">
+  <div id="compass-strip"></div>
+  <div class="compass-needle">▼</div>
+  <div id="compass-read">000° N</div>
+  <div id="hud-next">NEXT RING 1 · 0 m</div>
+</div>
+
+<div class="hud panel" id="power">
+  <label><span>THROTTLE — SHIFT / CTRL</span><span>SPACE = BOOST</span></label>
+  <div class="bar"><i id="hud-throttle-fill" style="width:55%"></i></div>
+  <label><span>FUEL</span><span id="hud-fuel-pct"></span></label>
+  <div class="bar"><i id="hud-fuel-fill" style="width:100%"></i></div>
+</div>
+
+<div class="hud panel" id="damage-wrap">
+  <label>HULL</label>
+  <div id="hud-damage">♥♥♥</div>
+</div>
+
+<div class="hud" id="banner"><div id="banner-title"></div><div id="banner-sub"></div></div>
+<div id="damage-flash"></div>
+
+<!-- Title screen -->
+<div class="overlay" id="title-screen">
+  <div class="menu panel">
+    <h1>SKY <span>SOAR</span></h1>
+    <div class="tag">CANYON RUN · 14 RINGS · 120 SECONDS</div>
+    <p>Chase the river through the canyon and thread every glowing ring.
+    Mind your throttle — fuel burns fast at full power and the walls bite:
+    three hits and the sortie is over. Best score wins the day.</p>
+    <div class="controls">
+      <div><b>W / S</b> — pitch down / up</div><div><b>A / D</b> — roll &amp; turn</div>
+      <div><b>Shift / Ctrl</b> — throttle up / down</div><div><b>Space</b> — boost (burns fuel)</div>
+      <div><b>Click</b> — start / restart</div><div><b>P</b> — pause · <b>R</b> — restart</div>
+      <div><b>Touch</b> — drag the stick to steer</div><div><b>THR + / − · BOOST</b> — on-screen buttons</div>
+    </div>
+    <button id="play-btn">TAKE OFF</button>
+    <div class="hint">CLICK OR PRESS ENTER TO FLY · M MUTES SOUND</div>
+  </div>
+</div>
+
+<!-- Pause screen -->
+<div class="overlay hidden" id="pause-screen">
+  <div class="menu panel">
+    <h1>PAUSED</h1>
+    <p>Engines idling over the canyon. Press P or click to keep flying.</p>
+    <button id="resume-btn">RESUME</button>
+  </div>
+</div>
+
+<!-- Game-over screen -->
+<div class="overlay hidden" id="end-screen">
+  <div class="menu panel">
+    <h1 id="end-title">SORTIE COMPLETE</h1>
+    <div class="big-score" id="end-score">0</div>
+    <div class="score-label">FINAL SCORE</div>
+    <div class="stat" id="end-rings">0 / 14 rings</div>
+    <div class="stat" id="end-best">Best score: 0</div>
+    <p id="end-note"></p>
+    <button id="again-btn">FLY AGAIN</button>
+    <div class="hint">CLICK OR PRESS R TO RESTART</div>
+  </div>
+</div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

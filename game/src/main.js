@@ -177,6 +177,7 @@ window.__skysoar = {
     const r = rings.nextRing();
     return r ? { x: r.x, y: r.y, z: r.z } : null;
   },
+  get touch() { return input.touch; },
   reset() { sim.reset(); hud.showScreen(null, sim.state); },
 };
 

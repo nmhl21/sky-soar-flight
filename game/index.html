@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <link rel="icon" href="data:,">
 <title>Sky Soar — Canyon Run</title>
 <style>
@@ -77,8 +77,40 @@
   button{pointer-events:auto;cursor:pointer;font-family:inherit;background:#ff7a1a;color:#fff;
     border:none;border-radius:8px;font-size:19px;font-weight:800;letter-spacing:3px;padding:14px 44px;
     box-shadow:0 4px 0 #c85a10}
+  /* touch controls (built by input.js, only on touch devices) */
+  #touch-ui{position:fixed;inset:0;z-index:30;pointer-events:none;touch-action:none}
+  #stick-base{position:fixed;left:16px;bottom:120px;width:120px;height:120px;border-radius:50%;
+    background:rgba(10,26,40,.45);border:2px solid rgba(255,255,255,.5);pointer-events:auto;touch-action:none}
+  #stick-knob{position:absolute;left:50%;top:50%;width:52px;height:52px;border-radius:50%;
+    background:rgba(255,255,255,.85);border:2px solid rgba(10,26,40,.4);
+    transform:translate(-50%,-50%);box-shadow:0 2px 8px rgba(0,0,0,.4);pointer-events:none}
+  #touch-btns{position:fixed;right:14px;bottom:120px;display:flex;gap:10px;align-items:flex-end;
+    pointer-events:none}
+  #touch-btns button{pointer-events:auto;touch-action:none;width:56px;height:56px;padding:0;
+    font-size:14px;letter-spacing:1px;border-radius:50%;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+  #touch-btns #btn-boost{width:64px;height:72px;border-radius:14px;background:#ff7a1a;
+    box-shadow:0 4px 0 #c85a10;font-size:15px}
+  #touch-btns button.held{filter:brightness(1.35);transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
   button:hover{filter:brightness(1.1)}
   @media (max-width:640px){.menu h1{font-size:36px}.controls{grid-template-columns:1fr}}
+  /* narrow portrait phones: top HUD stacks in two rows instead of overlapping */
+  @media (max-width:700px){
+    #top-center{top:8px;padding:6px 16px}
+    #hud-timer{font-size:24px}
+    #hud-score-line{font-size:12px}
+    #hud-best{display:none}
+    #instruments{top:64px;left:8px;padding:6px 8px;gap:6px}
+    #instruments .gauge b{font-size:15px}
+    #instruments .gauge label{font-size:8px}
+    #horizon{width:48px;height:48px}
+    #compass-wrap{top:64px;right:8px;width:150px;padding:6px 8px}
+    #compass-read{font-size:12px}
+    #hud-next{font-size:11px}
+    #power{left:8px;bottom:8px;width:210px;padding:8px 10px}
+    #damage-wrap{right:8px;bottom:8px;padding:8px 12px}
+    #hud-damage{font-size:20px}
+    #banner-title{font-size:32px}
+  }
 </style>
 <script type="importmap">
 { "imports": { "three": "./vendor/three/three.module.min.js" } }
@@ -134,6 +166,7 @@
       <div><b>W / S</b> — pitch down / up</div><div><b>A / D</b> — roll &amp; turn</div>
       <div><b>Shift / Ctrl</b> — throttle up / down</div><div><b>Space</b> — boost (burns fuel)</div>
       <div><b>Click</b> — start / restart</div><div><b>P</b> — pause · <b>R</b> — restart</div>
+      <div><b>Touch</b> — drag the stick to steer</div><div><b>THR + / − · BOOST</b> — on-screen buttons</div>
     </div>
     <button id="play-btn">TAKE OFF</button>
     <div class="hint">CLICK OR PRESS ENTER TO FLY · M MUTES SOUND</div>
